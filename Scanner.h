@@ -14,19 +14,35 @@
 // ---------- Defines -------------
 
 
-// ------ Class declaration -------
+// ------ Struct declaration -------
 
 
 
 // --------- Constructors ---------
 
 
-// ----------- Methods ------------
+// ----------- Functions ------------
+BbQueue *memscan_search_cond (
+	MemProc *mp,
+	unsigned char *desc,
+	unsigned char *pattern,
+	unsigned char *search_mask,
+	unsigned char *res_mask,
+	bool (*cond)(MemProc *mp, BbQueue *q)
+);
 
+BbQueue *memscan_search (
+	MemProc *mp,
+	unsigned char *desc,
+	unsigned char *pattern,
+	unsigned char *search_mask,
+	unsigned char *res_mask
+);
 
-BbQueue *memscan_search (MemProc *mp, unsigned char *desc, unsigned char *pattern, unsigned char *search_mask, unsigned char *res_mask);
-BbQueue *scan_search (unsigned char *pattern, unsigned char *mask);
-
+BbQueue *scan_search (
+		unsigned char *pattern,
+		unsigned char *mask
+);
 
 
 // --------- Destructors ----------
