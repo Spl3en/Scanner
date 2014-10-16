@@ -31,6 +31,12 @@ BbQueue *memscan_search_cond (
 	bool (*cond)(MemProc *mp, BbQueue *q)
 );
 
+BbQueue *memscan_search_string (
+	MemProc *mp,
+	char *description,
+	char *string
+);
+
 BbQueue *memscan_search (
 	MemProc *mp,
 	unsigned char *desc,

@@ -11,10 +11,7 @@ BbQueue *memscan_search_cond (MemProc *mp, unsigned char *desc, unsigned char *p
 
 	if (bb_queue_get_length(results) > 1)
 	{
-		debugb("%s : (%d) occurences found : ", desc, bb_queue_get_length(results));
-		foreach_bbqueue_item (results, MemBlock *block)
-			debugb("0x%.8x ", (int) block->addr);
-		debugb("\n");
+		debug("%s : (%d) occurences found : ", desc, bb_queue_get_length(results));
 	}
 
 	if (bb_queue_get_length(results) == 0)
@@ -72,6 +69,18 @@ BbQueue *memscan_search_cond (MemProc *mp, unsigned char *desc, unsigned char *p
 	}
 
 	return mbres;
+}
+
+BbQueue *memscan_search_string (
+	MemProc *mp,
+	char *description,
+	char *string
+) {
+	char *search_mask = strdup(string);
+	memset(search_mask, 'x', strlen(search_mask));
+
+	memproc_search (mp, string, search_mask, NULL, SEARCH_TYPE_BYTES);
+	return memproc_get_res(mp);
 }
 
 BbQueue *memscan_search (MemProc *mp, unsigned char *desc, unsigned char *pattern, unsigned char *search_mask, unsigned char *res_mask)
