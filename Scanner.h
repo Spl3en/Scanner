@@ -37,6 +37,20 @@ BbQueue *memscan_search_string (
 	char *string
 );
 
+BbQueue *memscan_search_buffer (
+	MemProc *mp,
+	char *description,
+	char *buffer,
+	int bufferSize
+);
+
+BbQueue *memscan_search_all (
+	MemProc *mp,
+	char *description,
+	unsigned char *pattern,
+	unsigned char *search_mask
+);
+
 BbQueue *memscan_search (
 	MemProc *mp,
 	unsigned char *desc,

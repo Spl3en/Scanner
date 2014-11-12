@@ -2,10 +2,10 @@
 
 BbQueue *memscan_search_cond (MemProc *mp, unsigned char *desc, unsigned char *pattern, unsigned char *search_mask, unsigned char *res_mask, bool (*cond)(MemProc *mp, BbQueue *q))
 {
-	memproc_search(mp, pattern, search_mask, NULL, SEARCH_TYPE_BYTES);
+	memproc_search (mp, pattern, search_mask, NULL, SEARCH_TYPE_BYTES);
 	BbQueue *results = memproc_get_res(mp);
 	BbQueue *mbres = NULL;
-	char *str;
+	char *str = desc;
 	DWORD ptr;
 	int len;
 
@@ -51,9 +51,9 @@ BbQueue *memscan_search_cond (MemProc *mp, unsigned char *desc, unsigned char *p
 		len = 0;
 		memcpy(&ptr, b->data, sizeof(DWORD));
 
-		while (*str != '/' && *str != '\0')
+		while (*desc != '/' && *desc != '\0')
 		{
-			str++;
+			desc++;
 			len++;
 		}
 
@@ -64,8 +64,8 @@ BbQueue *memscan_search_cond (MemProc *mp, unsigned char *desc, unsigned char *p
 		float fbuffer = 0;
 		memcpy(&ibuffer, buffer, sizeof(buffer));
 		memcpy(&fbuffer, buffer, sizeof(buffer));
-		debug("\t%.*s -> 0x%.8x (%.2d - 0x%.8x - %.2f)", len, str-len, ptr, ibuffer, ibuffer, fbuffer);
-		str++;
+		debug("\t%.*s -> 0x%.8x (%.2d - 0x%.8x - %.2f)", len, desc-len, ptr, ibuffer, ibuffer, fbuffer);
+		desc++;
 	}
 
 	return mbres;
@@ -76,11 +76,36 @@ BbQueue *memscan_search_string (
 	char *description,
 	char *string
 ) {
-	char *search_mask = strdup(string);
-	memset(search_mask, 'x', strlen(search_mask));
+	char *search_mask = strdup (string);
+	memset (search_mask, 'x', strlen(search_mask));
 
 	memproc_search (mp, string, search_mask, NULL, SEARCH_TYPE_BYTES);
+
+	free (search_mask);
 	return memproc_get_res(mp);
+}
+
+BbQueue *memscan_search_buffer (
+	MemProc *mp,
+	char *description,
+	char *buffer,
+	int bufferSize
+) {
+	char *search_mask = malloc (bufferSize);
+	memset(search_mask, 'x', bufferSize);
+
+	memproc_search (mp, buffer, search_mask, NULL, SEARCH_TYPE_BYTES);
+	return memproc_get_res(mp);
+}
+
+BbQueue *memscan_search_all (
+	MemProc *mp,
+	char *description,
+	unsigned char *pattern,
+	unsigned char *search_mask
+) {
+	memproc_search (mp, pattern, search_mask, NULL, SEARCH_TYPE_BYTES);
+	return memproc_get_res (mp);
 }
 
 BbQueue *memscan_search (MemProc *mp, unsigned char *desc, unsigned char *pattern, unsigned char *search_mask, unsigned char *res_mask)
