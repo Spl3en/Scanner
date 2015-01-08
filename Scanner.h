@@ -64,6 +64,37 @@ BbQueue *scan_search (
 		unsigned char *mask
 );
 
+// Directly in the process
+DWORD memscan_string (
+	char *description,
+	DWORD start, DWORD end,
+	char *string
+);
+
+DWORD memscan_buffer (
+	char *description,
+	DWORD start, DWORD end,
+	char *buffer,
+	int bufferSize
+);
+
+DWORD memscan_buffer_mask (
+	char *description,
+	DWORD start, DWORD end,
+	char *buffer,
+	int bufferSize,
+	char *search_mask
+);
+
+DWORD
+mem_scanner (
+	unsigned char *desc,
+	DWORD start, DWORD size,
+	unsigned char *pattern,
+	unsigned char *search_mask,
+	unsigned char *res_mask
+);
+
 
 // --------- Destructors ----------
 

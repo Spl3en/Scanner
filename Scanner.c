@@ -1,5 +1,48 @@
 #include "Scanner.h"
 
+#define __DEBUG_OBJECT__ "Scanner"
+#include "dbg/dbg.h"
+
+DWORD
+mem_scanner (
+	unsigned char *desc,
+	DWORD start, DWORD size,
+	unsigned char *pattern,
+	unsigned char *search_mask,
+	unsigned char *res_mask
+) {
+	DWORD result = mem_search (start, size, pattern, search_mask);
+
+	if (!result) {
+		fail ("\"%s\" : Nothing found", desc);
+		return 0;
+	}
+
+	dbg ("\"%s\" : Found in .text at 0x%08X", desc, result);
+
+	BbQueue *res = scan_search ((void *) result, res_mask);
+
+	foreach_bbqueue_item (res, Buffer *b)
+	{
+		int len = 0;
+		DWORD ptr;
+		memcpy(&ptr, b->data, sizeof(DWORD));
+
+		while (*desc != '/' && *desc != '\0')
+		{
+			desc++;
+			len++;
+		}
+
+		result = ptr;
+
+		dbg ("\t%.*s -> 0x%.8x", len, desc-len, ptr);
+		desc++;
+	}
+
+	return result;
+}
+
 BbQueue *memscan_search_cond (MemProc *mp, unsigned char *desc, unsigned char *pattern, unsigned char *search_mask, unsigned char *res_mask, bool (*cond)(MemProc *mp, BbQueue *q))
 {
 	memproc_search (mp, pattern, search_mask, NULL, SEARCH_TYPE_BYTES);
@@ -11,12 +54,12 @@ BbQueue *memscan_search_cond (MemProc *mp, unsigned char *desc, unsigned char *p
 
 	if (bb_queue_get_length(results) > 1)
 	{
-		debug("%s : (%d) occurences found : ", desc, bb_queue_get_length(results));
+		dbg ("%s : (%d) occurences found : ", desc, bb_queue_get_length(results));
 	}
 
 	if (bb_queue_get_length(results) == 0)
 	{
-		important("\"%s\" : Nothing found", desc);
+		fail ("\"%s\" : Nothing found", desc);
 		bb_queue_free(results);
 		return NULL;
 	}
@@ -25,7 +68,7 @@ BbQueue *memscan_search_cond (MemProc *mp, unsigned char *desc, unsigned char *p
 		if (bb_queue_get_length(results) == 0)
 		{
 			bb_queue_free(results);
-			debug("Pattern found, but condition does not match.");
+			dbg ("Pattern found, but condition does not match.");
 			return NULL;
 		}
 
@@ -39,7 +82,7 @@ BbQueue *memscan_search_cond (MemProc *mp, unsigned char *desc, unsigned char *p
 
 		mbres = scan_search(str, res_mask);
 
-		debug("\"%s\" : found at 0x%.8x :", desc, ptr);
+		dbg ("\"%s\" : found at 0x%.8x :", desc, ptr);
 		str = desc;
 
 		memblock_free(block);
@@ -64,7 +107,7 @@ BbQueue *memscan_search_cond (MemProc *mp, unsigned char *desc, unsigned char *p
 		float fbuffer = 0;
 		memcpy(&ibuffer, buffer, sizeof(buffer));
 		memcpy(&fbuffer, buffer, sizeof(buffer));
-		debug("\t%.*s -> 0x%.8x (%.2d - 0x%.8x - %.2f)", len, desc-len, ptr, ibuffer, ibuffer, fbuffer);
+		dbg ("\t%.*s -> 0x%.8x (%.2d - 0x%.8x - %.2f)", len, desc-len, ptr, ibuffer, ibuffer, fbuffer);
 		desc++;
 	}
 
@@ -76,13 +119,45 @@ BbQueue *memscan_search_string (
 	char *description,
 	char *string
 ) {
-	char *search_mask = strdup (string);
-	memset (search_mask, 'x', strlen(search_mask));
+	return memscan_search_buffer (mp, description, string, strlen (string));
+}
 
-	memproc_search (mp, string, search_mask, NULL, SEARCH_TYPE_BYTES);
+DWORD memscan_string (
+	char *description,
+	DWORD start, DWORD end,
+	char *string
+) {
+	return memscan_buffer (description, start, end, string, strlen (string));
+}
 
+DWORD memscan_buffer (
+	char *description,
+	DWORD start, DWORD end,
+	char *buffer,
+	int bufferSize
+) {
+	char *search_mask = malloc (bufferSize);
+	memset (search_mask, 'x', bufferSize);
+
+	DWORD res = mem_search (start, end, buffer, search_mask);
 	free (search_mask);
-	return memproc_get_res(mp);
+	dbg ("%s : occurrence found : 0x%08X", description, res);
+
+	return res;
+}
+
+DWORD memscan_buffer_mask (
+	char *description,
+	DWORD start, DWORD end,
+	char *buffer,
+	int bufferSize,
+	char *search_mask
+) {
+	DWORD res = mem_search (start, end, buffer, search_mask);
+	free (search_mask);
+	dbg ("%s : occurrence found : 0x%08X", description, res);
+
+	return res;
 }
 
 BbQueue *memscan_search_buffer (
@@ -92,10 +167,14 @@ BbQueue *memscan_search_buffer (
 	int bufferSize
 ) {
 	char *search_mask = malloc (bufferSize);
-	memset(search_mask, 'x', bufferSize);
+	memset (search_mask, 'x', bufferSize);
 
 	memproc_search (mp, buffer, search_mask, NULL, SEARCH_TYPE_BYTES);
-	return memproc_get_res(mp);
+	free (search_mask);
+	BbQueue *res = memproc_get_res(mp);
+	dbg ("%s : %d occurences found.", description, bb_queue_get_length(res));
+
+	return res;
 }
 
 BbQueue *memscan_search_all (
@@ -105,7 +184,10 @@ BbQueue *memscan_search_all (
 	unsigned char *search_mask
 ) {
 	memproc_search (mp, pattern, search_mask, NULL, SEARCH_TYPE_BYTES);
-	return memproc_get_res (mp);
+	BbQueue *res = memproc_get_res(mp);
+	dbg ("%s : %d occurences found.", description, bb_queue_get_length(res));
+
+	return res;
 }
 
 BbQueue *memscan_search (MemProc *mp, unsigned char *desc, unsigned char *pattern, unsigned char *search_mask, unsigned char *res_mask)
